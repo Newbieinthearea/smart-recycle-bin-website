@@ -71,7 +71,7 @@ export default function Dashboard() {
           
           <p className="text-green-100 text-sm font-medium mb-1">Hello, {user.first_name} 👋</p>
           <h2 className="text-2xl font-bold mb-4">Let&apos;s save the world!</h2>
-          
+          <h2 className="text-2xl font-bold mb-4">SANNA PMO SO BAD OH MY DAY</h2>
           <div className="flex gap-4">
              <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl flex-1 text-center">
                 <span className="block text-3xl font-bold">{myStats.cans}</span>

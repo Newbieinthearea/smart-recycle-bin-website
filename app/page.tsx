@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TelegramUser } from './components/TelegramLogin';
 import { Trophy, Leaf, LogOut, Award, TrendingUp, History } from 'lucide-react';
+import Image from 'next/image';
+
 
 export default function Dashboard() {
   const router = useRouter();
@@ -54,10 +56,13 @@ export default function Dashboard() {
             <p className="text-sm font-bold text-gray-800">{user.first_name}</p>
             <p className="text-xs text-green-600">Rank #{myStats.rank}</p>
           </div>
-          <img 
-            src={user.photo_url || `https://ui-avatars.com/api/?name=${user.first_name}&background=16a34a&color=fff`} 
-            alt="Profile" 
-            className="w-10 h-10 rounded-full border-2 border-green-100"
+          <Image
+            src={user.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.first_name)}&background=16a34a&color=fff`}
+            alt="Profile"
+            width={40}
+            height={40}
+            className="rounded-full border-2 border-green-100"
+            priority
           />
         </div>
       </header>

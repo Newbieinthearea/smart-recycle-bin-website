@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import TelegramLogin, { TelegramUser } from '../components/TelegramLogin';
 
@@ -12,13 +12,28 @@ function LoginContent() {
   // Replace with your actual bot username (without @)
   const BOT_USERNAME = 'thungthungbot';
   
+  // Check if user is already logged in
+  useEffect(() => {
+    const existingSession = localStorage.getItem('user_session');
+    if (existingSession) {
+      console.log('👤 User already logged in, redirecting...');
+      router.push('/');
+    }
+  }, [router]);
+  
   const handleTelegramAuth = async (user: TelegramUser) => {
+    console.log('🔥 Telegram auth callback triggered!', user);
     setIsLoading(true);
-    console.log('Telegram user authenticated:', user);
     
     try {
+      // Validate user data
+      if (!user || !user.id) {
+        throw new Error('Invalid user data received from Telegram');
+      }
+      
+      console.log('✅ Storing user session...');
       // Store user data (you might want to send this to your backend)
-      localStorage.setItem('telegramUser', JSON.stringify(user));
+      localStorage.setItem('user_session', JSON.stringify(user));
       
       // You can also send user data to your backend API here
       // const response = await fetch('/api/auth/telegram', {
@@ -27,10 +42,14 @@ function LoginContent() {
       //   body: JSON.stringify(user)
       // });
       
-      // Redirect to main page or dashboard
-      router.push('/');
+      console.log('🚀 Redirecting to dashboard...');
+      // Small delay to ensure localStorage is written
+      setTimeout(() => {
+        router.push('/');
+      }, 100);
     } catch (error) {
-      console.error('Authentication error:', error);
+      console.error('❌ Authentication error:', error);
+      alert('Authentication failed. Please try again.');
       setIsLoading(false);
     }
   };

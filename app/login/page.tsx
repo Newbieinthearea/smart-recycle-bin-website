@@ -12,12 +12,38 @@ function LoginContent() {
   // Replace with your actual bot username (without @)
   const BOT_USERNAME = 'thungthungbot';
   
-  // Check if user is already logged in
+  // Check if user is already logged in OR handle OAuth callback
   useEffect(() => {
     const existingSession = localStorage.getItem('user_session');
     if (existingSession) {
       console.log('👤 User already logged in, redirecting...');
       router.push('/');
+      return;
+    }
+
+    // Handle OAuth callback parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+    const first_name = urlParams.get('first_name');
+    const auth_date = urlParams.get('auth_date');
+    const hash = urlParams.get('hash');
+
+    if (id && first_name && auth_date && hash) {
+      console.log('🔗 OAuth callback detected in URL');
+      const user: TelegramUser = {
+        id: parseInt(id),
+        first_name: first_name,
+        username: urlParams.get('username') || undefined,
+        photo_url: urlParams.get('photo_url') || undefined,
+        auth_date: parseInt(auth_date),
+        hash: hash
+      };
+      
+      handleTelegramAuth(user);
+      
+      // Clean up URL parameters
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
     }
   }, [router]);
   
@@ -77,7 +103,7 @@ function LoginContent() {
             <div className="text-center">
               <p className="text-xs text-gray-400 mb-2">Having issues? Try direct login:</p>
               <a 
-                href={`https://oauth.telegram.org/auth?bot_id=${BOT_USERNAME}&origin=${typeof window !== 'undefined' ? window.location.origin : ''}&return_to=${typeof window !== 'undefined' ? window.location.origin : ''}/login`}
+                href={`https://oauth.telegram.org/auth?bot_id=${BOT_USERNAME}&origin=${typeof window !== 'undefined' ? window.location.origin : ''}&return_to=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}`}
                 className="text-blue-600 hover:text-blue-800 text-sm underline"
               >
                 Login with Telegram (Direct)

@@ -14,6 +14,9 @@ function LoginContent() {
   
   // Check if user is already logged in OR handle OAuth callback
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     const existingSession = localStorage.getItem('user_session');
     if (existingSession) {
       console.log('👤 User already logged in, redirecting...');

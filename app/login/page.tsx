@@ -66,11 +66,24 @@ function LoginContent() {
             <span className="ml-2 text-gray-600">Authenticating...</span>
           </div>
         ) : (
-          /* Telegram Login Widget */
-          <TelegramLogin 
-            botName={BOT_USERNAME}
-            onAuth={handleTelegramAuth}
-          />
+          <div className="space-y-4">
+            {/* Telegram Login Widget */}
+            <TelegramLogin 
+              botName={BOT_USERNAME}
+              onAuth={handleTelegramAuth}
+            />
+            
+            {/* Alternative: Direct Telegram Auth Link */}
+            <div className="text-center">
+              <p className="text-xs text-gray-400 mb-2">Having issues? Try direct login:</p>
+              <a 
+                href={`https://oauth.telegram.org/auth?bot_id=${BOT_USERNAME}&origin=${typeof window !== 'undefined' ? window.location.origin : ''}&return_to=${typeof window !== 'undefined' ? window.location.origin : ''}/login`}
+                className="text-blue-600 hover:text-blue-800 text-sm underline"
+              >
+                Login with Telegram (Direct)
+              </a>
+            </div>
+          </div>
         )}
         
         <p className="text-xs text-gray-400 mt-4">

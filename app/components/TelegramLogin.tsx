@@ -37,7 +37,7 @@ export default function TelegramLogin({ botName, onAuth }: Props) {
     script.setAttribute('data-size', 'large');
     script.setAttribute('data-radius', '8');
     script.setAttribute('data-request-access', 'write');
-    script.setAttribute('data-userpic', 'false');
+    script.setAttribute('data-userpic', 'true');
     script.async = true;
 
     // 3. No casting needed! TypeScript now knows this is valid.

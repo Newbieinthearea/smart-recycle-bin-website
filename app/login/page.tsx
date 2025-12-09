@@ -8,7 +8,7 @@ export default function LoginPage() {
   const router = useRouter();
   
   // Use your bot username WITH @ symbol
-  const BOT_USERNAME = 'thungthung_bot'; // Replace with your actual bot username
+  const BOT_USERNAME = '@thungthungbot'; // Replace with your actual bot username
 
   // Check if user is already logged in
   useEffect(() => {

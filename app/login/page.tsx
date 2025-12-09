@@ -9,7 +9,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   // ✅ CORRECT: No '@' symbol
-  const BOT_USERNAME = 'thungthung_bot'; 
+  const BOT_USERNAME = 'thungthungbot'; 
 
   useEffect(() => {
     // Redirect if already logged in

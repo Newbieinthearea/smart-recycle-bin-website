@@ -1,18 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { TelegramUser } from '../components/TelegramLogin';
-
-declare global {
-  interface Window {
-    onTelegramAuth?: (user: TelegramUser) => void;
-  }
-}
 
 export default function LoginPage() {
   const router = useRouter();
-  const scriptLoadedRef = useRef(false);
+  const hasProcessedAuth = useRef(false);
 
   useEffect(() => {
     // Check if already logged in
@@ -22,65 +16,86 @@ export default function LoginPage() {
       return;
     }
 
-    // Define the callback function BEFORE loading the script
-    window.onTelegramAuth = (user: TelegramUser) => {
-      console.log('✅ Telegram callback triggered!', user);
+    // Check URL parameters for OAuth callback
+    if (!hasProcessedAuth.current && typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const telegramData: Record<string, string> = {};
       
-      // Save to localStorage
-      localStorage.setItem('user_session', JSON.stringify(user));
-      
-      // Redirect to dashboard
-      router.push('/');
-    };
+      // Extract all Telegram parameters
+      urlParams.forEach((value, key) => {
+        telegramData[key] = value;
+      });
 
-    // Only load the script once
-    if (!scriptLoadedRef.current && !document.getElementById('telegram-widget-script')) {
-      const script = document.createElement('script');
-      script.id = 'telegram-widget-script';
-      script.src = 'https://telegram.org/js/telegram-widget.js?22';
-      script.async = true;
-      script.setAttribute('data-telegram-login', 'thungthungbot');
-      script.setAttribute('data-size', 'large');
-      script.setAttribute('data-onauth', 'onTelegramAuth(user)');
-      script.setAttribute('data-request-access', 'write');
+      // If we have Telegram auth data
+      if (telegramData.id && telegramData.hash) {
+        console.log('✅ Telegram OAuth callback received!', telegramData);
+        
+        const user: TelegramUser = {
+          id: parseInt(telegramData.id),
+          first_name: telegramData.first_name || '',
+          username: telegramData.username,
+          photo_url: telegramData.photo_url,
+          auth_date: parseInt(telegramData.auth_date),
+          hash: telegramData.hash,
+        };
 
-      const container = document.getElementById('telegram-login-container');
-      if (container) {
-        container.appendChild(script);
-        scriptLoadedRef.current = true;
+        // Save to localStorage
+        localStorage.setItem('user_session', JSON.stringify(user));
+        
+        // Mark as processed
+        hasProcessedAuth.current = true;
+        
+        // Redirect to dashboard
+        router.push('/');
       }
     }
-
-    return () => {
-      // Cleanup
-      if (window.onTelegramAuth) {
-        delete window.onTelegramAuth;
-      }
-    };
   }, [router]);
+
+  const handleTelegramLogin = () => {
+    if (typeof window === 'undefined') return;
+    
+    // Use direct OAuth link that opens Telegram app
+    const botId = '8299146600';
+    const origin = encodeURIComponent(window.location.origin);
+    const returnTo = encodeURIComponent(window.location.href);
+    
+    const oauthUrl = `https://oauth.telegram.org/auth?bot_id=${botId}&origin=${origin}&return_to=${returnTo}&request_access=write`;
+    
+    console.log('🔗 Opening Telegram OAuth:', oauthUrl);
+    
+    // Open in same window
+    window.location.href = oauthUrl;
+  };
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md w-full">
         <h1 className="text-2xl font-bold mb-6">Login with Telegram</h1>
         
-        {/* Widget container */}
-        <div id="telegram-login-container" className="flex justify-center mb-4"></div>
-        
-        {/* Manual fallback */}
-        <div className="mt-4">
-          <p className="text-sm text-gray-600 mb-2">Widget not loading?</p>
-          <a
-            href={`https://oauth.telegram.org/auth?bot_id=8299146600&origin=${encodeURIComponent('https://thungthung.vercel.app')}&return_to=${encodeURIComponent('https://thungthung.vercel.app/login')}&request_access=write`}
-            className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition"
+        <div className="space-y-4">
+          {/* Primary Login Button */}
+          <button
+            onClick={handleTelegramLogin}
+            className="w-full bg-[#0088cc] text-white px-6 py-3 rounded-lg hover:bg-[#006699] transition flex items-center justify-center gap-2 font-medium"
           >
-            Open Telegram Login
-          </a>
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18.717-.962 4.042-1.362 5.362-.168.558-.5 1.035-.818 1.035-.5 0-.818-.442-.818-.942 0-.317.168-.717.5-1.317l1.362-2.542c.168-.317.5-.442.818-.442.5 0 .818.442.818.942 0 .317-.168.717-.5 1.317z"/>
+            </svg>
+            Login with Telegram
+          </button>
+
+          {/* Info */}
+          <div className="text-sm text-gray-600 space-y-2">
+            <p>Click the button to open Telegram</p>
+            <p className="text-xs">You&apos;ll need to confirm in your Telegram app</p>
+          </div>
         </div>
 
         {/* Debug info */}
-        <div className="mt-6 text-xs text-gray-500">
-          <p>Bot: thungthungbot</p>
+        <div className="mt-6 text-xs text-gray-500 border-t pt-4">
+          <p className="font-semibold mb-1">Configuration:</p>
+          <p>Bot ID: 8299146600</p>
+          <p>Bot: @thungthungbot</p>
           <p>Domain: thungthung.vercel.app</p>
         </div>
       </div>

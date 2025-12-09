@@ -1,45 +1,59 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-// Make sure this path points to where you saved File 1
-import TelegramLogin, { TelegramUser } from '../components/TelegramLogin'; 
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
 
-  // ✅ CORRECT: No '@' symbol
-  const BOT_USERNAME = 'thungthungbot'; 
-
   useEffect(() => {
-    // Redirect if already logged in
-    const existingSession = localStorage.getItem('user_session');
-    if (existingSession) {
+    // 1. Define the global callback function that Telegram looks for
+    // This matches the <script type="text/javascript"> part of your snippet
+    // @ts-expect-error: We are adding a custom function to the window object
+    window.onTelegramAuth = (user) => {
+      alert('Logged in as ' + user.first_name); // Your alert test
+      console.log(user);
+      
+      // Save data and redirect
+      localStorage.setItem('user_session', JSON.stringify(user));
       router.push('/');
-    }
-  }, [router]);
+    };
 
-  const handleAuth = (user: TelegramUser) => {
-    console.log("Authorized:", user);
-    // Save the user data to browser storage
-    localStorage.setItem('user_session', JSON.stringify(user));
-    // Redirect to the dashboard
-    router.push('/');
-  };
+    // 2. Create the script tag
+    // This matches the <script async src="..."> part
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.async = true;
+
+    // 3. Set the attributes exactly as you have them
+    script.setAttribute('data-telegram-login', 'thungthungbot');
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+    script.setAttribute('data-request-access', 'write');
+
+    // 4. Add it to the page
+    // We add it to a specific div with id="telegram-login-container"
+    const container = document.getElementById('telegram-login-container');
+    if (container) {
+      container.innerHTML = ''; // Clean up any old buttons
+      container.appendChild(script);
+    }
+
+    // Cleanup when leaving the page
+    return () => {
+      // @ts-expect-error: Cleanup
+      delete window.onTelegramAuth;
+    };
+  }, [router]);
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-100">
       <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-lg text-center">
         <h1 className="text-2xl font-bold text-gray-800">Smart Recycle Bin</h1>
-        <p className="text-gray-500 mt-2">Login to track your recycling score</p>
+        <p className="text-gray-500 mt-4 mb-6">Login to track your recycling score</p>
         
-        <TelegramLogin 
-          botName={BOT_USERNAME}
-          onAuth={handleAuth}
-          buttonSize="large"
-          cornerRadius={10}
-          requestAccess="write"
-        />
+        {/* The script will inject the button INSIDE this div */}
+        <div id="telegram-login-container" className="flex justify-center" />
       </div>
     </div>
   );

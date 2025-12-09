@@ -11,6 +11,12 @@ export interface TelegramUser {
   hash: string;
 }
 
+declare global {
+  interface Window {
+    onTelegramAuth?: (user: TelegramUser) => void;
+  }
+}
+
 interface TelegramLoginProps {
   botName: string;
   onAuth: (user: TelegramUser) => void;
@@ -30,7 +36,6 @@ export default function TelegramLogin({
 
   useEffect(() => {
     // 1. Assign the callback to the global window object
-    // @ts-expect-error: Telegram widget requires this specific global function
     window.onTelegramAuth = (user: TelegramUser) => {
       onAuth(user);
     };

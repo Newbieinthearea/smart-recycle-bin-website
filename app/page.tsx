@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TelegramUser } from './components/TelegramLogin';
-import { Trophy, Leaf, LogOut, Award, TrendingUp, History } from 'lucide-react';
+import { TelegramUser } from './components/TelegramLogin'; 
+import { Trophy, Leaf, LogOut, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
-
 
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState<TelegramUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // Add loading state to prevent flash
 
   // Mock Data for Prototype
   const myStats = {
@@ -28,16 +28,31 @@ export default function Dashboard() {
   ];
 
   useEffect(() => {
+    // 1. Get the session
     const session = localStorage.getItem('user_session');
+
+    // 2. Logic Handling
     if (!session) {
       router.push('/login');
     } else {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      setUser(JSON.parse(session) as TelegramUser);
+      try {
+        const parsedUser = JSON.parse(session);
+        setUser(parsedUser as TelegramUser);
+      } catch (error) {
+        console.error("Session corrupted:", error);
+        localStorage.removeItem('user_session');
+        router.push('/login');
+      }
     }
-  }, []);
+    
+    // 3. Mark loading as done so the UI can render
+    setIsLoading(false);
 
-  if (!user) return null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ✅ Empty dependency array ensures this runs exactly ONCE on mount
+
+  // Show nothing while checking (or a simple spinner)
+  if (isLoading || !user) return null;
 
   return (
     <div className="min-h-screen bg-[#F0FDF4] pb-20 font-sans">
@@ -70,7 +85,7 @@ export default function Dashboard() {
       <main className="max-w-md mx-auto pt-6 px-4">
         
         {/* 2. Welcome Card */}
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
+        <div className="bg-linear-to-r from-green-600 to-emerald-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute top-0 right-0 -mr-4 -mt-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
           
@@ -121,7 +136,7 @@ export default function Dashboard() {
             
             <div className="divide-y divide-gray-50">
                 {leaderboard.map((player, index) => (
-                    <div key={index} className={`flex items-center p-4 hover:bg-green-50/30 transition ${index < 3 ? 'bg-gradient-to-r from-yellow-50/30 to-transparent' : ''}`}>
+                    <div key={index} className={`flex items-center p-4 hover:bg-green-50/30 transition ${index < 3 ? 'bg-linear-to-r from-yellow-50/30 to-transparent' : ''}`}>
                         <div className="w-8 text-center font-bold text-gray-400 mr-2">
                             {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${player.rank}`}
                         </div>

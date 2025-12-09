@@ -37,7 +37,7 @@ export default function LoginPage() {
       script.id = 'telegram-widget-script';
       script.src = 'https://telegram.org/js/telegram-widget.js?22';
       script.async = true;
-      script.setAttribute('data-telegram-login', 'thungthungbot');
+      script.setAttribute('data-telegram-login', 'thungthungx_bot');
       script.setAttribute('data-size', 'large');
       script.setAttribute('data-onauth', 'onTelegramAuth(user)');
       script.setAttribute('data-request-access', 'write');
@@ -82,7 +82,8 @@ export default function LoginPage() {
         {/* Debug info */}
         <div className="mt-6 text-xs text-gray-500 border-t pt-4">
           <p className="font-semibold mb-1">Configuration:</p>
-          <p>Bot: @thungthungbot</p>
+          <p>Bot: @thungthungx_bot</p>
+          <p>Bot ID: 8409143943</p>
           <p>Domain: thungthung.vercel.app</p>
         </div>
       </div>

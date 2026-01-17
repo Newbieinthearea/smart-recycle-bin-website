@@ -19,6 +19,7 @@ model User {
   points        Int       @default(0)
   recycledCount Int       @default(0)
   level         Int       @default(1)  
+  transactions  RecycleTransaction[]
   accounts      Account[]
 }
 
@@ -47,5 +48,22 @@ model PasswordResetToken {
   email     String
   token     String   @unique
   expires   DateTime
+  createdAt DateTime @default(now())
+}
+model RecycleTransaction {
+  id        String   @id @default(cuid())
+  
+  // Data from the Pi
+  plastic   Int      @default(0)
+  cans      Int      @default(0)
+  binId     String   // To know which machine sent this
+  
+  // Status of the transaction
+  isClaimed Boolean  @default(false)
+  
+  // Who claimed it? (Optional initially, filled when user scans)
+  claimedByUser   User?   @relation(fields: [userId], references: [id])
+  userId          String?
+  
   createdAt DateTime @default(now())
 }

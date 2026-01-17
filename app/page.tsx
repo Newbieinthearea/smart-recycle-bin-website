@@ -1,22 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react'; // Changed imports
 import { useRouter } from 'next/navigation';
-import { TelegramUser } from './components/TelegramLogin'; 
 import { Trophy, Leaf, LogOut, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
+import { useEffect } from 'react';
 
 export default function Dashboard() {
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [user, setUser] = useState<TelegramUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Add loading state to prevent flash
 
-  // Mock Data for Prototype
+  // Mock Data
   const myStats = {
     cans: 42,
     points: 420,
     rank: 12,
-    co2Saved: 0.85 // kg
+    co2Saved: 0.85 
   };
 
   const leaderboard = [
@@ -27,37 +26,22 @@ export default function Dashboard() {
     { rank: 5, name: "Bopha", cans: 64, points: 640, avatar: "🌸" },
   ];
 
+  // Protect the route
   useEffect(() => {
-    // 1. Get the session
-    const session = localStorage.getItem('user_session');
-
-    // 2. Logic Handling
-    if (!session) {
+    if (status === 'unauthenticated') {
       router.push('/login');
-    } else {
-      try {
-        const parsedUser = JSON.parse(session);
-        setUser(parsedUser as TelegramUser);
-      } catch (error) {
-        console.error("Session corrupted:", error);
-        localStorage.removeItem('user_session');
-        router.push('/login');
-      }
     }
-    
-    // 3. Mark loading as done so the UI can render
-    setIsLoading(false);
+  }, [status, router]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // ✅ Empty dependency array ensures this runs exactly ONCE on mount
+  if (status === 'loading') return null; // Or a spinner
 
-  // Show nothing while checking (or a simple spinner)
-  if (isLoading || !user) return null;
+  // Fallback if session is null (though useEffect handles redirect)
+  if (!session?.user) return null;
 
   return (
     <div className="min-h-screen bg-[#F0FDF4] pb-20 font-sans">
       
-      {/* 1. Header Section */}
+      {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10 px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
            <div className="bg-green-100 p-2 rounded-lg">
@@ -68,30 +52,30 @@ export default function Dashboard() {
         
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-bold text-gray-800">{user.first_name}</p>
+            <p className="text-sm font-bold text-gray-800">{session.user.name}</p>
             <p className="text-xs text-green-600">Rank #{myStats.rank}</p>
           </div>
           <Image
-            src={user.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.first_name)}&background=16a34a&color=fff`}
+            src={session.user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name || "User")}&background=random`}
             alt="Profile"
             width={40}
             height={40}
             className="rounded-full border-2 border-green-100"
             priority
+            unoptimized
           />
         </div>
       </header>
 
       <main className="max-w-md mx-auto pt-6 px-4">
         
-        {/* 2. Welcome Card */}
+        {/* Welcome Card */}
         <div className="bg-linear-to-r from-green-600 to-emerald-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
-          {/* Background Pattern */}
           <div className="absolute top-0 right-0 -mr-4 -mt-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
           
-          <p className="text-green-100 text-sm font-medium mb-1">Hello, {user.first_name} 👋</p>
+          <p className="text-green-100 text-sm font-medium mb-1">Hello, {session.user.name} 👋</p>
           <h2 className="text-2xl font-bold mb-4">Let&apos;s save the world!</h2>
-          <h2 className="text-2xl font-bold mb-4">SANNA PMO SO BAD OH MY DAY</h2>
+          
           <div className="flex gap-4">
              <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl flex-1 text-center">
                 <span className="block text-3xl font-bold">{myStats.cans}</span>
@@ -104,7 +88,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 3. My Impact (Grid) */}
+        {/* Impact Section */}
         <h3 className="text-gray-800 font-bold text-lg mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-green-600" /> Your Impact
         </h3>
@@ -125,7 +109,7 @@ export default function Dashboard() {
             </div>
         </div>
 
-        {/* 4. Leaderboard */}
+        {/* Leaderboard */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
@@ -156,9 +140,9 @@ export default function Dashboard() {
             </div>
         </div>
 
-        {/* 5. Logout Button */}
+        {/* Logout Button */}
         <button 
-            onClick={() => { localStorage.removeItem('user_session'); router.push('/login'); }}
+            onClick={() => signOut()} 
             className="w-full mt-8 flex items-center justify-center gap-2 text-red-500 py-4 font-medium hover:bg-red-50 rounded-xl transition"
         >
             <LogOut className="w-4 h-4" /> Logout

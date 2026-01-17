@@ -1,1 +1,29 @@
 @import "tailwindcss";
+
+/* 👇 THIS LINE IS THE FIX */
+/* It tells Tailwind: "When the HTML tag has 'dark' class, apply dark styles" */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-green-50: #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-600: #16a34a;
+  --color-green-700: #15803d;
+}
+
+/* Standard Variables */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+.dark {
+  --background: #0a101d; /* Slate 900 */
+  --foreground: #ededed;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}

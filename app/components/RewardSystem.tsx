@@ -173,4 +173,4 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
       </div>
     </div>
   );
-}
+}   

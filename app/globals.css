@@ -28,11 +28,9 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Clean up the QR Scanner UI */
 #reader__scan_region {
-  background: white;
+  background: transparent !important;
 }
-
 #reader__dashboard_section_csr span, 
 #reader__dashboard_section_swaplink {
   display: none !important; /* Hides "Scan an Image File" link */

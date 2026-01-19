@@ -1,21 +1,28 @@
-import NextAuth, { NextAuthOptions } from "next-auth"; // 👈 Import Type
+import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+// 👇 IMPORT THIS TO FIX THE TYPE CASTING
+import type { Adapter } from "next-auth/adapters"; 
 
 const prisma = new PrismaClient();
 
-// 👇 1. EXPORT THIS VARIABLE SEPARATELY
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  // 👇 FIX 1: Cast the adapter to 'Adapter' (or 'any') to silence the type mismatch
+  adapter: PrismaAdapter(prisma) as Adapter,
+  
   session: { strategy: "jwt" },
-  secret: process.env.NEXTAUTH_SECRET,
+  
+  // 👇 FIX 2: Add '!' to promise the secret exists
+  secret: process.env.NEXTAUTH_SECRET!,
+  
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
       name: "Credentials",
@@ -26,28 +33,32 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
         const user = await prisma.user.findUnique({ where: { email: credentials.email } });
-        if (!user || !user.password) throw new Error("User not found");
+        
+        // Ensure user exists and has a password (google users might not)
+        if (!user || !user.password) throw new Error("User not found or uses Google Login");
+        
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) throw new Error("Invalid password");
+        
         return user;
       },
     }),
   ],
-  // Optional: Add the user ID to the session so we can access it easily
   callbacks: {
-    async jwt({ token, trigger, session }) {
-      // 1. Listen for the "update" trigger from the frontend
+    async jwt({ token, user, trigger, session }) {
       if (trigger === "update" && session?.name) {
-        token.name = session.name; // Update the name in the token
+        token.name = session.name;
+      }
+      if (user) {
+        token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        // @ts-expect-error  Add id to session.user
+        // @ts-expect-error - Session user type extended in types/next-auth.d.ts
         session.user.id = token.sub;
-        // 2. Ensure the session uses the updated name from the token
-        session.user.name = token.name;
+        session.user.role = token.role;
       }
       return session;
     },

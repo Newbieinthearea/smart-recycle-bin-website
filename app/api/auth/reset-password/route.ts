@@ -1,39 +1,39 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma"; // Use shared connection
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
     const { token, newPassword } = await req.json();
 
     if (!token || !newPassword) {
-        return NextResponse.json({ message: "Missing data" }, { status: 400 });
+      return NextResponse.json({ message: "Missing data" }, { status: 400 });
     }
 
-    // 1. Find the token in DB
-    const resetToken = await prisma.passwordResetToken.findUnique({
-        where: { token },
+    // 1. Find User by Token AND Check Expiry
+    // We look for a user who has this specific token, AND the token hasn't expired yet
+    const user = await prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpiry: { gt: new Date() }, // "gt" means Greater Than (future)
+      },
     });
 
-    // 2. Validate token (Check existence AND expiration)
-    if (!resetToken || resetToken.expires < new Date()) {
-        return NextResponse.json({ message: "Invalid or expired link. Please request a new one." }, { status: 400 });
+    if (!user) {
+      return NextResponse.json({ message: "Invalid or expired link" }, { status: 400 });
     }
 
-    // 3. Hash the new password
+    // 2. Hash Password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // 4. Update the User's password
+    // 3. Update User & Clear Token
     await prisma.user.update({
-        where: { email: resetToken.email },
-        data: { password: hashedPassword },
-    });
-
-    // 5. Delete the used token (One-time use)
-    await prisma.passwordResetToken.delete({
-        where: { token },
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,       // Clear it so it can't be used again
+        resetTokenExpiry: null,
+      },
     });
 
     return NextResponse.json({ message: "Password reset successful" });

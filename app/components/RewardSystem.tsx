@@ -2,24 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image"; // 👈 Using Next.js Image optimization
 import QRCode from "react-qr-code";
 import { ShoppingBag, Ticket, Loader2, CheckCircle } from "lucide-react";
-import Image from "next/image";
-
 
 interface Reward {
   id: string;
   name: string;
   cost: number;
   description: string;
-  image?: string | null; // Image is optional
+  image?: string | null;
   stock: number;
 }
 
 interface Redemption {
   id: string;
   uniqueCode: string;
-  reward: { name: string; image?: string | null }; // Reward inside redemption also has image
+  reward: { name: string; image?: string | null };
   status: string;
   createdAt: Date;
 }
@@ -98,16 +97,20 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
               rewards.map((reward) => (
                 <div key={reward.id} className="flex flex-col h-full p-4 transition bg-white border border-gray-100 dark:bg-slate-900 rounded-xl dark:border-slate-600 hover:shadow-md">
                   
-                  {/* 👇 UPDATED: Image Display */}
-                  <div className="relative flex items-center justify-center mb-4 overflow-hidden bg-gray-100 rounded-lg h-32 dark:bg-slate-800">
+                  {/* 👇 UPDATED: Next/Image with Aspect Square */}
+                  <div className="relative w-full mb-4 overflow-hidden bg-gray-100 rounded-lg aspect-square dark:bg-slate-800">
                      {reward.image ? (
-                       <Image
+                       <Image 
                          src={reward.image} 
                          alt={reward.name} 
-                         className="object-cover w-full h-full transition-transform hover:scale-105" 
+                         fill
+                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                         className="object-cover transition-transform hover:scale-105" 
                        />
                      ) : (
-                       <span className="text-4xl">🎁</span>
+                       <div className="flex items-center justify-center w-full h-full">
+                          <span className="text-4xl">🎁</span>
+                       </div>
                      )}
                   </div>
                   
@@ -144,7 +147,7 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
               redemptions.map((item) => (
                 <div key={item.id} className="flex flex-col gap-6 p-6 bg-white border border-gray-200 md:flex-row dark:bg-slate-900 rounded-xl dark:border-slate-600">
                   {/* QR Code Section */}
-                  <div className="p-2 bg-white border border-gray-100 shadow-sm rounded-lg">
+                  <div className="p-2 bg-white border border-gray-100 shadow-sm rounded-lg shrink-0">
                      {item.status === "COMPLETED" ? (
                         <div className="flex items-center justify-center w-24 h-24 text-gray-400 bg-gray-100 rounded">
                             <CheckCircle className="w-10 h-10" />
@@ -157,12 +160,14 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
                   {/* Details */}
                   <div className="flex-1 text-center md:text-left">
                     <div className="flex items-center justify-center gap-3 mb-1 md:justify-start">
-                        {/* 👇 UPDATED: Small Thumbnail in Inventory */}
+                        {/* 👇 UPDATED: Small Thumbnail in Inventory using Next/Image */}
                         {item.reward.image && (
-                          <Image
+                          <Image 
                             src={item.reward.image} 
                             alt={item.reward.name} 
-                            className="object-cover w-10 h-10 border border-gray-200 rounded-md dark:border-slate-700" 
+                            width={40}
+                            height={40}
+                            className="object-cover border border-gray-200 rounded-md dark:border-slate-700" 
                           />
                         )}
 

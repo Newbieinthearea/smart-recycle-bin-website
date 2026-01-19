@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image"; // 👈 Using Next.js Image optimization
+import Image from "next/image";
 import QRCode from "react-qr-code";
 import { ShoppingBag, Ticket, Loader2, CheckCircle } from "lucide-react";
 
@@ -36,16 +36,13 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
 
   const handleRedeem = async (rewardId: string) => {
     setLoadingId(rewardId);
-
     try {
       const res = await fetch("/api/rewards/redeem", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rewardId }),
       });
-
       const data = await res.json();
-
       if (res.ok) {
         alert("Redemption Successful!");
         router.refresh(); 
@@ -61,10 +58,10 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
   };
 
   return (
-    <div className="mt-8 overflow-hidden transition-colors bg-white border border-green-100 shadow-sm dark:bg-slate-800 rounded-2xl dark:border-slate-700">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-green-100 dark:border-slate-700 overflow-hidden transition-colors h-full flex flex-col">
       
       {/* TABS */}
-      <div className="flex border-b border-gray-100 dark:border-slate-700">
+      <div className="flex border-b border-gray-100 dark:border-slate-700 shrink-0">
         <button
           onClick={() => setActiveTab("market")}
           className={`flex-1 py-4 text-sm font-bold flex items-center justify-center gap-2 transition ${
@@ -87,42 +84,37 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
         </button>
       </div>
 
-      <div className="p-6">
+      {/* SCROLLABLE CONTENT AREA */}
+      <div className="p-6 overflow-y-auto custom-scrollbar h-[500px]">
+        
         {/* MARKETPLACE TAB */}
         {activeTab === "market" && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {rewards.length === 0 ? (
-              <p className="py-10 text-center text-gray-500 col-span-full">No rewards available right now. Check back later!</p>
+              <p className="col-span-full text-center text-gray-500 py-10">No rewards available right now.</p>
             ) : (
               rewards.map((reward) => (
-                <div key={reward.id} className="flex flex-col h-full p-4 transition bg-white border border-gray-100 dark:bg-slate-900 rounded-xl dark:border-slate-600 hover:shadow-md">
-                  
-                  {/* 👇 UPDATED: Next/Image with Aspect Square */}
-                  <div className="relative w-full mb-4 overflow-hidden bg-gray-100 rounded-lg aspect-square dark:bg-slate-800">
+                <div key={reward.id} className="border border-gray-100 dark:border-slate-600 rounded-xl p-4 flex flex-col hover:shadow-md transition bg-white dark:bg-slate-900">
+                  <div className="relative w-full aspect-square bg-gray-100 dark:bg-slate-800 rounded-lg mb-4 overflow-hidden">
                      {reward.image ? (
                        <Image 
                          src={reward.image} 
                          alt={reward.name} 
                          fill
-                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                         className="object-cover transition-transform hover:scale-105" 
+                         className="object-cover hover:scale-105 transition-transform" 
                        />
                      ) : (
-                       <div className="flex items-center justify-center w-full h-full">
-                          <span className="text-4xl">🎁</span>
-                       </div>
+                       <div className="flex items-center justify-center w-full h-full text-4xl">🎁</div>
                      )}
                   </div>
-                  
                   <h3 className="font-bold text-gray-800 dark:text-gray-100">{reward.name}</h3>
-                  <p className="mb-3 mt-1 text-xs text-gray-500 line-clamp-2 dark:text-gray-400">{reward.description}</p>
-                  
-                  <div className="flex items-center justify-between mt-auto">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3 line-clamp-2">{reward.description}</p>
+                  <div className="mt-auto flex items-center justify-between">
                     <span className="font-bold text-green-600 dark:text-green-400">{reward.cost} Pts</span>
                     <button
                       onClick={() => handleRedeem(reward.id)}
                       disabled={userPoints < reward.cost || reward.stock <= 0 || loadingId === reward.id}
-                      className="px-4 py-2 text-xs font-bold text-white transition bg-gray-900 rounded-lg dark:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600"
+                      className="px-4 py-2 bg-gray-900 dark:bg-slate-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 hover:bg-green-600 transition"
                     >
                       {loadingId === reward.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Redeem"}
                     </button>
@@ -137,55 +129,25 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
         {activeTab === "inventory" && (
           <div className="space-y-4">
             {redemptions.length === 0 ? (
-              <div className="py-10 text-center">
-                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full dark:bg-slate-700">
-                  <Ticket className="w-8 h-8 text-gray-400" />
-                </div>
-                <p className="text-gray-500 dark:text-gray-400">You haven&apos;t redeemed any rewards yet.</p>
-              </div>
+              <div className="text-center py-10 text-gray-500">You haven&apos;t redeemed any rewards yet.</div>
             ) : (
               redemptions.map((item) => (
-                <div key={item.id} className="flex flex-col gap-6 p-6 bg-white border border-gray-200 md:flex-row dark:bg-slate-900 rounded-xl dark:border-slate-600">
-                  {/* QR Code Section */}
-                  <div className="p-2 bg-white border border-gray-100 shadow-sm rounded-lg shrink-0">
+                <div key={item.id} className="flex flex-col md:flex-row items-center gap-6 border border-gray-200 dark:border-slate-600 rounded-xl p-4 bg-white dark:bg-slate-900">
+                  <div className="bg-white p-2 rounded-lg shadow-sm shrink-0">
                      {item.status === "COMPLETED" ? (
-                        <div className="flex items-center justify-center w-24 h-24 text-gray-400 bg-gray-100 rounded">
-                            <CheckCircle className="w-10 h-10" />
-                        </div>
+                        <div className="w-20 h-20 bg-gray-100 flex items-center justify-center rounded text-gray-400"><CheckCircle /></div>
                      ) : (
-                        <QRCode value={item.uniqueCode} size={96} />
+                        <QRCode value={item.uniqueCode} size={80} />
                      )}
                   </div>
-
-                  {/* Details */}
                   <div className="flex-1 text-center md:text-left">
-                    <div className="flex items-center justify-center gap-3 mb-1 md:justify-start">
-                        {/* 👇 UPDATED: Small Thumbnail in Inventory using Next/Image */}
-                        {item.reward.image && (
-                          <Image 
-                            src={item.reward.image} 
-                            alt={item.reward.name} 
-                            width={40}
-                            height={40}
-                            className="object-cover border border-gray-200 rounded-md dark:border-slate-700" 
-                          />
-                        )}
-
-                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{item.reward.name}</h3>
-                        
-                        {item.status === "COMPLETED" && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">CLAIMED</span>}
-                        {item.status === "PENDING" && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold">READY</span>}
-                    </div>
-                    
-                    <p className="inline-block px-2 py-1 mb-2 font-mono text-sm text-gray-500 border border-gray-200 rounded bg-gray-50 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400">
-                      Code: {item.uniqueCode}
-                    </p>
-                    
-                    <p className="text-xs text-gray-400">
-                      {item.status === "COMPLETED" 
-                        ? `Claimed on ${new Date(item.createdAt).toLocaleDateString()}` 
-                        : "Show this QR code to the admin to claim your reward."}
-                    </p>
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100">{item.reward.name}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{item.uniqueCode}</p>
+                    <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${
+                        item.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                    }`}>
+                        {item.status}
+                    </span>
                   </div>
                 </div>
               ))

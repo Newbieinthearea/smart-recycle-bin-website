@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Scan, CheckCircle, XCircle, Search, Camera, X } from "lucide-react";
+import { Scan, CheckCircle, XCircle, Search, Camera, X, ImageIcon } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode"; // 👈 Import the Core Class, not the Scanner
 import Link from "next/link";
 
@@ -19,14 +19,16 @@ export default function AdminRedeem() {
   
   // Ref to track the running scanner instance so we can stop it cleanly
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processRedemption = async (uniqueCode: string) => {
-    // 1. Stop scanner if it's running
+    // Stop scanner if running
     if (scannerRef.current) {
       try {
-        await scannerRef.current.stop();
+        if (scannerRef.current.isScanning) {
+            await scannerRef.current.stop();
+        }
         scannerRef.current.clear();
-        scannerRef.current = null;
       } catch (err) {
         console.warn("Failed to stop scanner", err);
       }
@@ -64,41 +66,56 @@ export default function AdminRedeem() {
     if (code) processRedemption(code);
   };
 
+  // 👇 NEW: Handle File Upload for QR Scan
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const file = e.target.files[0];
+    setStatus("loading");
+
+    try {
+      // We use the same "reader" div, even if hidden
+      const html5QrCode = new Html5Qrcode("reader");
+      const decodedText = await html5QrCode.scanFile(file, true);
+      processRedemption(decodedText);
+    } catch (err) {
+      setStatus("error");
+      setResult({ error: "Could not find a QR code in this image." });
+    } finally {
+        // Reset the input so you can upload the same file again if needed
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   // CAMERA LOGIC
   useEffect(() => {
     if (status === "scanning") {
-      // 1. Initialize
       const html5QrCode = new Html5Qrcode("reader");
       scannerRef.current = html5QrCode;
 
-      // 2. Start Scanning (Force Back Camera)
       html5QrCode.start(
-        { facingMode: "environment" }, // 👈 This forces the back camera!
+        { facingMode: "environment" },
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
         },
         (decodedText) => {
-          // Success Callback
           processRedemption(decodedText);
         },
         (errorMessage) => {
-          // Parse error, ignore
+          // ignore frame errors
         }
       ).catch((err) => {
-        // Start failed (usually permission denied)
         console.error("Camera start failed", err);
         setStatus("error");
         setResult({ error: "Camera failed or permission denied." });
       });
 
-      // Cleanup function
       return () => {
         if (scannerRef.current) {
-          scannerRef.current.stop().then(() => {
-             scannerRef.current?.clear();
-          }).catch(err => console.warn("Stop failed", err));
+             // We catch errors here because sometimes it's already stopped
+             try { scannerRef.current.stop(); scannerRef.current.clear(); } catch(e) {}
         }
       };
     }
@@ -119,30 +136,54 @@ export default function AdminRedeem() {
           </Link>
         </div>
 
-        {/* CAMERA VIEWPORT */}
-        {status === "scanning" ? (
-          <div className="mb-6">
-            {/* The library injects the video here */}
-            <div id="reader" className="overflow-hidden border-2 rounded-xl border-slate-300 dark:border-slate-600"></div>
-            
+        {/* ⚠️ IMPORTANT: The 'reader' div must ALWAYS exist in the DOM 
+            for the library to work (both for Camera and File Scan).
+            We just hide it with CSS when not scanning.
+        */}
+        <div 
+            id="reader" 
+            className={`overflow-hidden border-2 rounded-xl border-slate-300 dark:border-slate-600 mb-6 ${status === "scanning" ? "block" : "hidden"}`}
+        ></div>
+
+        {/* CAMERA VIEWPORT CONTROLS */}
+        {status === "scanning" && (
             <button 
               onClick={() => setStatus("idle")}
-              className="flex items-center justify-center w-full gap-2 py-3 mt-4 font-bold text-red-600 transition bg-red-100 rounded-xl hover:bg-red-200"
+              className="flex items-center justify-center w-full gap-2 py-3 mb-6 font-bold text-red-600 transition bg-red-100 rounded-xl hover:bg-red-200"
             >
               <X className="w-5 h-5" /> Stop Scanning
             </button>
+        )}
+
+        {/* ACTION BUTTONS (Visible when IDLE) */}
+        {status !== "scanning" && (
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <button
+                onClick={() => {
+                    setStatus("scanning");
+                    setResult(null);
+                }}
+                className="flex flex-col items-center justify-center gap-2 py-4 font-bold text-white transition shadow-lg bg-slate-900 dark:bg-slate-700 rounded-xl hover:bg-slate-800 dark:hover:bg-slate-600"
+            >
+                <Camera className="w-6 h-6" /> Open Camera
+            </button>
+
+            <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center justify-center gap-2 py-4 font-bold text-gray-700 transition bg-gray-100 border border-gray-200 shadow-sm dark:bg-slate-800 dark:text-white dark:border-slate-600 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700"
+            >
+                <ImageIcon className="w-6 h-6" /> Upload Image
+            </button>
+            
+            {/* Hidden File Input */}
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handleFileUpload}
+            />
           </div>
-        ) : (
-          /* START SCAN BUTTON */
-          <button
-            onClick={() => {
-                setStatus("scanning");
-                setResult(null);
-            }}
-            className="flex items-center justify-center w-full gap-2 py-4 mb-6 font-bold text-white transition shadow-lg bg-slate-900 dark:bg-slate-700 rounded-xl hover:bg-slate-800 dark:hover:bg-slate-600"
-          >
-            <Camera className="w-5 h-5" /> Open Camera
-          </button>
         )}
 
         {/* OR DIVIDER */}
@@ -184,6 +225,7 @@ export default function AdminRedeem() {
               <p>Item: <strong>{result.rewardName}</strong></p>
               <p>Student: <strong>{result.userName}</strong></p>
             </div>
+            <button onClick={() => setStatus("idle")} className="mt-4 font-bold text-green-700 underline hover:text-green-800">Scan Another</button>
           </div>
         )}
 

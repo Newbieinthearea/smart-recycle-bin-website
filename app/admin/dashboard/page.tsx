@@ -304,7 +304,7 @@ export default function AdminDashboard() {
                         }`}>
                         
                         <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 overflow-hidden rounded bg-slate-100 dark:bg-slate-700 shrink-0">
+                           <div className="relative w-10 h-10 overflow-hidden rounded bg-slate-100 dark:bg-slate-700 shrink-0">
                               {reward.image ? (
                                 <Image src={reward.image} alt={reward.name} fill className="object-cover" />
                               ) : (

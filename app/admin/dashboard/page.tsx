@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { ScanLine, Plus, Package, Users, Ticket, Pencil, Trash2, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 // --- Interfaces ---
 interface AdminUser {
@@ -305,7 +306,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-3">
                            <div className="w-10 h-10 overflow-hidden rounded bg-slate-100 dark:bg-slate-700 shrink-0">
                               {reward.image ? (
-                                <img src={reward.image} className="object-cover w-full h-full" />
+                                <Image src={reward.image} alt={reward.name} fill className="object-cover" />
                               ) : (
                                 <div className="flex items-center justify-center w-full h-full text-xs text-slate-400">IMG</div>
                               )}

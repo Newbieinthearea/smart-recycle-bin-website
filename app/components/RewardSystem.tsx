@@ -2,23 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import QRCode from "react-qr-code";
-import { ShoppingBag, Ticket, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { ShoppingBag, Ticket, Loader2, CheckCircle } from "lucide-react";
+import Image from "next/image";
+
 
 interface Reward {
   id: string;
   name: string;
   cost: number;
   description: string;
-  image?: string | null;
+  image?: string | null; // Image is optional
   stock: number;
 }
 
 interface Redemption {
   id: string;
   uniqueCode: string;
-  reward: { name: string; image?: string | null };
+  reward: { name: string; image?: string | null }; // Reward inside redemption also has image
   status: string;
   createdAt: Date;
 }
@@ -33,11 +34,9 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"market" | "inventory">("market");
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [msg, setMsg] = useState("");
 
   const handleRedeem = async (rewardId: string) => {
     setLoadingId(rewardId);
-    setMsg("");
 
     try {
       const res = await fetch("/api/rewards/redeem", {
@@ -49,9 +48,9 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
       const data = await res.json();
 
       if (res.ok) {
-        setMsg("Redemption Successful!");
-        router.refresh(); // Refresh page to update points & inventory
-        setActiveTab("inventory"); // Switch to inventory to show the item
+        alert("Redemption Successful!");
+        router.refresh(); 
+        setActiveTab("inventory"); 
       } else {
         alert(data.error || "Failed to redeem");
       }
@@ -63,7 +62,7 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-green-100 dark:border-slate-700 overflow-hidden mt-8 transition-colors">
+    <div className="mt-8 overflow-hidden transition-colors bg-white border border-green-100 shadow-sm dark:bg-slate-800 rounded-2xl dark:border-slate-700">
       
       {/* TABS */}
       <div className="flex border-b border-gray-100 dark:border-slate-700">
@@ -92,26 +91,35 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
       <div className="p-6">
         {/* MARKETPLACE TAB */}
         {activeTab === "market" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {rewards.length === 0 ? (
-              <p className="col-span-full text-center text-gray-500 py-10">No rewards available right now. Check back later!</p>
+              <p className="py-10 text-center text-gray-500 col-span-full">No rewards available right now. Check back later!</p>
             ) : (
               rewards.map((reward) => (
-                <div key={reward.id} className="border border-gray-100 dark:border-slate-600 rounded-xl p-4 flex flex-col h-full hover:shadow-md transition bg-white dark:bg-slate-900">
-                  <div className="h-32 bg-gray-100 dark:bg-slate-800 rounded-lg mb-4 relative overflow-hidden flex items-center justify-center">
-                     {/* Placeholder Image Logic */}
-                     <span className="text-4xl">🎁</span>
+                <div key={reward.id} className="flex flex-col h-full p-4 transition bg-white border border-gray-100 dark:bg-slate-900 rounded-xl dark:border-slate-600 hover:shadow-md">
+                  
+                  {/* 👇 UPDATED: Image Display */}
+                  <div className="relative flex items-center justify-center mb-4 overflow-hidden bg-gray-100 rounded-lg h-32 dark:bg-slate-800">
+                     {reward.image ? (
+                       <Image
+                         src={reward.image} 
+                         alt={reward.name} 
+                         className="object-cover w-full h-full transition-transform hover:scale-105" 
+                       />
+                     ) : (
+                       <span className="text-4xl">🎁</span>
+                     )}
                   </div>
                   
                   <h3 className="font-bold text-gray-800 dark:text-gray-100">{reward.name}</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3 line-clamp-2">{reward.description}</p>
+                  <p className="mb-3 mt-1 text-xs text-gray-500 line-clamp-2 dark:text-gray-400">{reward.description}</p>
                   
-                  <div className="mt-auto flex items-center justify-between">
+                  <div className="flex items-center justify-between mt-auto">
                     <span className="font-bold text-green-600 dark:text-green-400">{reward.cost} Pts</span>
                     <button
                       onClick={() => handleRedeem(reward.id)}
                       disabled={userPoints < reward.cost || reward.stock <= 0 || loadingId === reward.id}
-                      className="px-4 py-2 bg-gray-900 dark:bg-slate-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600 transition"
+                      className="px-4 py-2 text-xs font-bold text-white transition bg-gray-900 rounded-lg dark:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600"
                     >
                       {loadingId === reward.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Redeem"}
                     </button>
@@ -126,20 +134,19 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
         {activeTab === "inventory" && (
           <div className="space-y-4">
             {redemptions.length === 0 ? (
-              <div className="text-center py-10">
-                <div className="bg-gray-100 dark:bg-slate-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="py-10 text-center">
+                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full dark:bg-slate-700">
                   <Ticket className="w-8 h-8 text-gray-400" />
                 </div>
                 <p className="text-gray-500 dark:text-gray-400">You haven&apos;t redeemed any rewards yet.</p>
               </div>
             ) : (
               redemptions.map((item) => (
-                <div key={item.id} className="flex flex-col md:flex-row items-center gap-6 border border-gray-200 dark:border-slate-600 rounded-xl p-6 bg-white dark:bg-slate-900">
+                <div key={item.id} className="flex flex-col gap-6 p-6 bg-white border border-gray-200 md:flex-row dark:bg-slate-900 rounded-xl dark:border-slate-600">
                   {/* QR Code Section */}
-                  <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-100">
-                     {/* QR Code hidden if completed */}
+                  <div className="p-2 bg-white border border-gray-100 shadow-sm rounded-lg">
                      {item.status === "COMPLETED" ? (
-                        <div className="w-24 h-24 bg-gray-100 flex items-center justify-center rounded text-gray-400">
+                        <div className="flex items-center justify-center w-24 h-24 text-gray-400 bg-gray-100 rounded">
                             <CheckCircle className="w-10 h-10" />
                         </div>
                      ) : (
@@ -149,13 +156,23 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
 
                   {/* Details */}
                   <div className="flex-1 text-center md:text-left">
-                    <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                        <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100">{item.reward.name}</h3>
+                    <div className="flex items-center justify-center gap-3 mb-1 md:justify-start">
+                        {/* 👇 UPDATED: Small Thumbnail in Inventory */}
+                        {item.reward.image && (
+                          <Image
+                            src={item.reward.image} 
+                            alt={item.reward.name} 
+                            className="object-cover w-10 h-10 border border-gray-200 rounded-md dark:border-slate-700" 
+                          />
+                        )}
+
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{item.reward.name}</h3>
+                        
                         {item.status === "COMPLETED" && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">CLAIMED</span>}
                         {item.status === "PENDING" && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold">READY</span>}
                     </div>
                     
-                    <p className="text-sm text-gray-500 dark:text-gray-400 font-mono bg-gray-50 dark:bg-slate-800 inline-block px-2 py-1 rounded border border-gray-200 dark:border-slate-700 mb-2">
+                    <p className="inline-block px-2 py-1 mb-2 font-mono text-sm text-gray-500 border border-gray-200 rounded bg-gray-50 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400">
                       Code: {item.uniqueCode}
                     </p>
                     
@@ -173,4 +190,4 @@ export default function RewardSystem({ userPoints, rewards, redemptions }: Props
       </div>
     </div>
   );
-}   
+}

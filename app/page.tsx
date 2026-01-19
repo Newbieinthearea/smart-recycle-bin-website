@@ -47,7 +47,7 @@ export default async function Home() {
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 text-green-700 dark:text-green-400 font-bold text-xl">
             <Leaf className="fill-green-600 dark:fill-green-500" />
-            <span>EcoBin</span>
+            <span>ThungThung</span>
           </div>
           <UserMenu user={session.user} />
         </div>
@@ -98,18 +98,18 @@ export default async function Home() {
         </div>
 
         {/* QUICK ACTIONS */}
-        <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">Quick Actions</h2>
+        {/* <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 gap-4">
           <button className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition shadow-lg shadow-green-200 dark:shadow-none">
             <MapPin className="w-6 h-6" />
             <span className="font-bold">Find Bins</span>
           </button>
-          {/* Linked to Admin Scan for testing easily */}
+          {/* Linked to Admin Scan for testing easily
           <Link href="/admin/scan" className="bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition">
             <ScanLine className="w-6 h-6" />
             <span className="font-bold">Admin Scan (Test)</span>
           </Link>
-        </div>
+        </div>  */}
 
         {/* REWARD SYSTEM SECTION */}
         <div className="mt-10">

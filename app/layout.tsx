@@ -7,7 +7,7 @@ import SessionProvider from "./components/SessionProvider"; // 👈 Import this
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "EcoBin",
+  title: "ThungThung",
   description: "Smart Recycling",
 };
 

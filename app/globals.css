@@ -27,3 +27,75 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Clean up the QR Scanner UI */
+#reader__scan_region {
+  background: white;
+}
+
+#reader__dashboard_section_csr span, 
+#reader__dashboard_section_swaplink {
+  display: none !important; /* Hides "Scan an Image File" link */
+}
+
+#reader__dashboard_section_fsr {
+    display: none !important; /* Hides file selection input if visible */
+}
+
+/* Make the permission button look better */
+#reader__camera_permission_button {
+  background-color: #2563eb !important; /* Blue-600 */
+  color: white !important;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+/* =========================================
+   QR CODE SCANNER OVERRIDES
+   ========================================= */
+
+/* 1. Hide the ugly status text */
+#reader__status_span {
+  display: none !important;
+}
+
+/* 2. Style the "Request Camera Permissions" Button */
+#reader__dashboard_section_csr button {
+  background-color: #2563eb !important; /* Blue-600 */
+  color: white !important;
+  font-weight: bold;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none !important;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background 0.2s;
+}
+#reader__dashboard_section_csr button:hover {
+  background-color: #1d4ed8 !important; /* Blue-700 */
+}
+
+/* 3. Style the "Scan an Image File" Button */
+#html5-qrcode-button-file-selection {
+  background-color: #f1f5f9 !important; /* Slate-100 */
+  color: #475569 !important; /* Slate-600 */
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1 !important;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+#html5-qrcode-button-file-selection:hover {
+  background-color: #e2e8f0 !important;
+}
+
+/* 4. Hide the "Scan using camera directly" link if it appears */
+#reader__dashboard_section_swaplink {
+  text-decoration: none !important;
+  color: #2563eb !important;
+  font-weight: bold;
+  display: inline-block;
+  margin-top: 10px;
+}

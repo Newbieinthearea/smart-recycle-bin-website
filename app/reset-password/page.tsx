@@ -13,6 +13,13 @@ function ResetForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Reusable styling for inputs (Matches Login Page)
+  const inputClass = "w-full pl-10 pr-4 py-3 rounded-xl border outline-none transition-all " +
+    "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 " + 
+    "focus:border-green-500 focus:bg-white focus:ring-2 focus:ring-green-200 " +
+    "dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-gray-500 " +
+    "dark:focus:bg-slate-800 dark:focus:border-green-500";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return alert("Invalid Link");
@@ -34,35 +41,42 @@ function ResetForm() {
     }
   };
 
-  if (!token) return <div className="text-center text-red-500 mt-20 font-bold">Invalid or Missing Link</div>;
+  if (!token) return (
+    <div className="min-h-screen flex items-center justify-center bg-green-50 dark:bg-slate-900">
+        <div className="text-red-500 font-bold bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl">
+            Invalid or Missing Link
+        </div>
+    </div>
+  );
 
   if (success) {
       return (
-        <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
-            <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center border border-green-100">
-                <div className="mx-auto bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mb-4">
-                    <CheckCircle className="w-8 h-8 text-green-600" />
+        <div className="min-h-screen flex items-center justify-center p-4 transition-colors bg-green-50 dark:bg-slate-900">
+            <div className="w-full max-w-md p-8 text-center transition-colors bg-white border border-green-100 shadow-xl rounded-2xl dark:bg-slate-800 dark:border-slate-700">
+                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full dark:bg-green-900/30">
+                    <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Password Reset!</h2>
-                <p className="text-gray-500">Redirecting you to login...</p>
+                <h2 className="mb-2 text-2xl font-bold text-gray-800 dark:text-white">Password Reset!</h2>
+                <p className="text-gray-500 dark:text-gray-400">Redirecting you to login...</p>
             </div>
         </div>
       );
   }
 
   return (
-    <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-green-100">
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Set New Password</h1>
+    <div className="min-h-screen flex items-center justify-center p-4 transition-colors bg-green-50 dark:bg-slate-900">
+      <div className="w-full max-w-md p-8 transition-colors bg-white border border-green-100 shadow-xl rounded-2xl dark:bg-slate-800 dark:border-slate-700">
+        <h1 className="mb-6 text-2xl font-bold text-center text-gray-800 dark:text-white">Set New Password</h1>
+        
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+            <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">New Password</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+              <Lock className="absolute w-5 h-5 text-gray-400 left-3 top-3.5 dark:text-gray-500" />
               <input
                 type="password"
                 required
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-green-500 transition"
+                className={inputClass}
                 placeholder="Must be at least 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -72,7 +86,7 @@ function ResetForm() {
           </div>
           <button 
             disabled={loading} 
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition shadow-lg shadow-green-200 disabled:opacity-70"
+            className="w-full py-3 font-bold text-white transition bg-green-600 shadow-lg rounded-xl hover:bg-green-700 shadow-green-200 dark:shadow-none disabled:opacity-70"
           >
             {loading ? "Updating..." : "Update Password"}
           </button>
@@ -84,7 +98,7 @@ function ResetForm() {
 
 export default function ResetPage() {
   return (
-    <Suspense fallback={<div className="text-center p-10">Loading...</div>}>
+    <Suspense fallback={<div className="p-10 text-center dark:text-white">Loading...</div>}>
       <ResetForm />
     </Suspense>
   );

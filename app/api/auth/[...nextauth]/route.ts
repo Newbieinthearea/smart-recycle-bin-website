@@ -46,9 +46,12 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-      if (trigger === "update" && session?.name) {
-        token.name = session.name;
+      // 👇 FIX: Update both Name AND Picture when 'update()' is called
+      if (trigger === "update") {
+        if (session?.name) token.name = session.name;
+        if (session?.image) token.picture = session.image; 
       }
+      
       if (user) {
         token.role = user.role;
       }

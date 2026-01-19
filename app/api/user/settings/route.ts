@@ -12,8 +12,9 @@ export async function PUT(req: Request) {
   if (!session || !session.user?.email) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
+  
 
-  const { name, currentPassword, newPassword } = await req.json();
+  const { name, image, currentPassword, newPassword } = await req.json();
 
   try {
     const user = await prisma.user.findUnique({
@@ -26,7 +27,7 @@ export async function PUT(req: Request) {
     if (name && name !== user.name) {
       await prisma.user.update({
         where: { email: session.user.email },
-        data: { name },
+        data: { name, image },
       });
     }
 

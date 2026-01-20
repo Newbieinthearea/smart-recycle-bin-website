@@ -1,62 +1,56 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
-const prisma = new PrismaClient();
+import { revalidatePath } from "next/cache"; // 👈 CRITICAL IMPORT
 
 export async function POST(req: Request) {
-  try {
-    // 1. Check if user is logged in
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user?.email) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const { transactionId } = await req.json();
-
-    // 2. Find the transaction
-    const transaction = await prisma.recycleTransaction.findUnique({
-      where: { id: transactionId },
-    });
-
-    if (!transaction) {
-      return NextResponse.json({ message: "Transaction not found" }, { status: 404 });
-    }
-
-    if (transaction.isClaimed) {
-      return NextResponse.json({ message: "Already claimed!" }, { status: 400 });
-    }
-
-    // 3. Calculate Points (Example: 10 points per plastic, 5 per can)
-    const pointsToAdd = (transaction.plastic * 10) + (transaction.cans * 5);
-    const totalItems = transaction.plastic + transaction.cans;
-
-    // 4. Update Database (User Points + Transaction Status)
-    // We use a transaction to ensure both happen or neither happens
-    await prisma.$transaction([
-      // Update User
-      prisma.user.update({
-        where: { email: session.user.email },
-        data: {
-          points: { increment: pointsToAdd },
-          recycledCount: { increment: totalItems },
-        },
-      }),
-      // Update Transaction
-      prisma.recycleTransaction.update({
-        where: { id: transactionId },
-        data: {
-          isClaimed: true,
-          userId: session.user.id, // Link it to this user
-        },
-      }),
-    ]);
-
-    return NextResponse.json({ status: "success", pointsAdded: pointsToAdd });
-
-  } catch (error) {
-    console.error("Claim Error:", error);
-    return NextResponse.json({ message: "Internal Error" }, { status: 500 });
+  // 1. Verify User Session
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // 2. Get Data from Request
+  const { transactionId, secret } = await req.json();
+
+  // 3. Find the Transaction
+  const tx = await prisma.recycleTransaction.findUnique({
+    where: { id: transactionId }
+  });
+
+  if (!tx) return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+  if (tx.isClaimed) return NextResponse.json({ error: "Already claimed" }, { status: 400 });
+
+  // 4. Security Check (Compare Secrets)
+  if (tx.claimSecret && tx.claimSecret !== secret) {
+     return NextResponse.json({ error: "Invalid QR Code" }, { status: 403 });
+  }
+
+  // 5. Calculate Points
+  // Logic: Plastic = 10 pts, Cans = 15 pts
+  const pointsEarned = (tx.plastic * 10) + (tx.cans * 15);
+
+  // 6. Update Database (Atomic Transaction)
+  await prisma.$transaction([
+    // A. Mark transaction as claimed
+    prisma.recycleTransaction.update({
+      where: { id: transactionId },
+      data: { 
+        isClaimed: true,
+        userId: session.user.id // Connect to the user
+      }
+    }),
+    // B. Add points to User Wallet
+    prisma.user.update({
+      where: { email: session.user.email },
+      data: { points: { increment: pointsEarned } }
+    })
+  ]);
+
+  // 7. ⚡ FIX THE DASHBOARD LAG ⚡
+  // This purges the cache for the home page so the new points show up instantly.
+  revalidatePath("/");
+
+  return NextResponse.json({ success: true, points: pointsEarned });
 }

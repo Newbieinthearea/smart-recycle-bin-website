@@ -62,6 +62,8 @@ model RecycleTransaction {
   plastic   Int      @default(0)
   cans      Int      @default(0)
   binId     String   // To know which machine sent this
+  status    String   @default("WAITING")
+  claimSecret String? @default(cuid())
   
   // Status of the transaction
   isClaimed Boolean  @default(false)

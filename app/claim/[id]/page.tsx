@@ -1,67 +1,126 @@
 "use client";
 
 import { useSession, signIn } from "next-auth/react";
-import { useRouter, useParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import { Loader2, CheckCircle, XCircle, Recycle } from "lucide-react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { Loader2, CheckCircle, XCircle, Gift } from "lucide-react";
 
 export default function ClaimPage() {
   const { data: session, status } = useSession();
-  const params = useParams(); // Get the ID from the URL
+  const params = useParams(); 
+  const searchParams = useSearchParams(); 
   const router = useRouter();
   
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<"initial" | "success" | "error">("initial");
+  // Ref to prevent double-firing
+  const hasClaimed = useRef(false);
+
+  const [claimState, setClaimState] = useState<"verifying" | "claiming" | "success" | "error">("verifying");
   const [message, setMessage] = useState("");
+  const [points, setPoints] = useState(0);
 
-  // 1. Force Login if not authenticated
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      signIn(undefined, { callbackUrl: `/claim/${params.id}` });
-    }
-  }, [status, params.id]);
-
+  // 👇 MOVED UP: Define this function BEFORE the useEffect
   const handleClaim = async () => {
-    setLoading(true);
+    hasClaimed.current = true; 
+    setClaimState("claiming");
+
     try {
-      const res = await fetch("/api/claim", {
+      const secret = searchParams.get("secret");
+
+      const res = await fetch("/api/machine/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transactionId: params.id }),
+        body: JSON.stringify({ 
+          transactionId: params.id, 
+          secret: secret 
+        }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        setResult("success");
-        setMessage(`You earned +${data.pointsAdded} Points!`);
+        setClaimState("success");
+        setPoints(data.points);
+        setMessage(`Successfully added to your wallet!`);
       } else {
-        setResult("error");
-        setMessage(data.message || "Something went wrong");
+        setClaimState("error");
+        setMessage(data.error || "Receipt invalid or already claimed.");
       }
     } catch (error) {
-      setResult("error");
-      setMessage("Network error");
-    } finally {
-      setLoading(false);
+      setClaimState("error");
+      setMessage("Network connection failed.");
     }
   };
 
-  if (status === "loading") return <div className="p-10 flex justify-center"><Loader2 className="animate-spin" /></div>;
+  // 👇 USE EFFECT COMES AFTER
+  useEffect(() => {
+    if (status === "loading") return;
+
+    // A. If not logged in, show UI
+    if (status === "unauthenticated") {
+      setClaimState("verifying");
+      return;
+    }
+
+    // B. If logged in, Auto-Claim immediately
+    if (status === "authenticated" && !hasClaimed.current) {
+      handleClaim();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]); // We ignore handleClaim dependency to prevent infinite loops without useCallback
+
+  // --- RENDERING ---
+
+  if (status === "loading" || claimState === "claiming") {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-4 bg-green-50">
+        <div className="w-full max-w-sm p-10 text-center bg-white shadow-xl rounded-2xl">
+          <Loader2 className="w-16 h-16 mx-auto text-green-600 animate-spin" />
+          <h2 className="mt-4 text-xl font-bold text-gray-800">Verifying Receipt...</h2>
+          <p className="text-gray-500">Please wait a moment</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-4 bg-green-50">
+        <div className="w-full max-w-sm p-8 text-center bg-white shadow-xl rounded-2xl">
+          <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 bg-orange-100 rounded-full">
+            <Gift className="w-10 h-10 text-orange-500" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800">Save Your Points!</h1>
+          <p className="mt-2 text-gray-600">Log in to add this recycling session to your account.</p>
+          
+          <button 
+            onClick={() => signIn("google", { callbackUrl: window.location.href })}
+            className="w-full py-4 mt-8 text-lg font-bold text-white transition bg-blue-600 shadow-lg rounded-xl hover:bg-blue-700 shadow-blue-200"
+          >
+            Log in to Claim
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
-      <div className="bg-white max-w-sm w-full rounded-2xl shadow-xl p-8 text-center">
+    <div className="flex items-center justify-center min-h-screen p-4 bg-green-50">
+      <div className="w-full max-w-sm p-8 text-center bg-white shadow-xl rounded-2xl">
         
         {/* SUCCESS STATE */}
-        {result === "success" && (
-          <div className="space-y-4">
-            <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
-            <h1 className="text-2xl font-bold text-gray-800">Success!</h1>
-            <p className="text-lg text-green-600 font-medium">{message}</p>
+        {claimState === "success" && (
+          <div className="space-y-6 animate-in fade-in zoom-in">
+            <div className="flex items-center justify-center w-24 h-24 mx-auto bg-green-100 rounded-full">
+               <CheckCircle className="w-12 h-12 text-green-600" />
+            </div>
+            <div>
+              <h1 className="text-5xl font-bold text-green-600">+{points}</h1>
+              <span className="text-sm font-bold tracking-widest text-gray-400 uppercase">Points Added</span>
+            </div>
+            <p className="font-medium text-gray-600">{message}</p>
             <button 
               onClick={() => router.push("/")}
-              className="w-full py-3 bg-gray-800 text-white rounded-xl font-bold mt-4"
+              className="w-full py-4 font-bold text-white bg-gray-900 rounded-xl hover:bg-black"
             >
               Go to Dashboard
             </button>
@@ -69,38 +128,18 @@ export default function ClaimPage() {
         )}
 
         {/* ERROR STATE */}
-        {result === "error" && (
-          <div className="space-y-4">
-            <XCircle className="w-20 h-20 text-red-500 mx-auto" />
-            <h1 className="text-2xl font-bold text-gray-800">Oops!</h1>
-            <p className="text-gray-600">{message}</p>
+        {claimState === "error" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-center w-24 h-24 mx-auto bg-red-100 rounded-full">
+               <XCircle className="w-12 h-12 text-red-500" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800">Claim Failed</h1>
+            <p className="text-red-500">{message}</p>
             <button 
               onClick={() => router.push("/")}
-              className="w-full py-3 bg-gray-200 text-gray-800 rounded-xl font-bold mt-4"
+              className="w-full py-4 font-bold text-gray-800 bg-gray-200 rounded-xl hover:bg-gray-300"
             >
-              Go Home
-            </button>
-          </div>
-        )}
-
-        {/* INITIAL STATE (Click to Claim) */}
-        {result === "initial" && (
-          <div className="space-y-6">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <Recycle className="w-10 h-10 text-green-600" />
-            </div>
-            
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Recycling Detected!</h1>
-              <p className="text-gray-500 mt-2">Click below to add these items to your account.</p>
-            </div>
-
-            <button
-              onClick={handleClaim}
-              disabled={loading}
-              className="w-full py-4 bg-green-600 hover:bg-green-700 text-white text-lg font-bold rounded-xl shadow-lg shadow-green-200 transition flex items-center justify-center gap-2"
-            >
-              {loading ? <Loader2 className="animate-spin" /> : "Collect Points"}
+              Back to Home
             </button>
           </div>
         )}

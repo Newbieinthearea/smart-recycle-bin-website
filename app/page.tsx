@@ -112,7 +112,7 @@ export default async function Home() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             
             {/* Left Side: Reward System */}
-            <div className="lg:col-span-2 h-[600px]">
+            <div className="lg:col-span-2 h-150">
                 <RewardSystem
                     userPoints={stats.points}
                     rewards={rewards}
@@ -121,7 +121,7 @@ export default async function Home() {
             </div>
 
             {/* Right Side: Leaderboard */}
-            <div className="lg:col-span-1 h-[600px]">
+            <div className="lg:col-span-1 h-150">
                  <Leaderboard 
                     usersByPoints={usersByPoints} 
                     usersByRecycled={usersByRecycled} 

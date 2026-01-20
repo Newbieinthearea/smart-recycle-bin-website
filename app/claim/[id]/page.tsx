@@ -3,6 +3,7 @@
 import { useSession, signIn } from "next-auth/react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link"; // <--- 1. Import Link
 import { Loader2, CheckCircle, XCircle, Gift } from "lucide-react";
 
 export default function ClaimPage() {
@@ -11,14 +12,13 @@ export default function ClaimPage() {
   const searchParams = useSearchParams(); 
   const router = useRouter();
   
-  // Ref to prevent double-firing
   const hasClaimed = useRef(false);
 
   const [claimState, setClaimState] = useState<"verifying" | "claiming" | "success" | "error">("verifying");
   const [message, setMessage] = useState("");
   const [points, setPoints] = useState(0);
 
-  // 👇 MOVED UP: Define this function BEFORE the useEffect
+  // --- LOGIC ---
   const handleClaim = async () => {
     hasClaimed.current = true; 
     setClaimState("claiming");
@@ -26,7 +26,7 @@ export default function ClaimPage() {
     try {
       const secret = searchParams.get("secret");
 
-      const res = await fetch("/api/claim", {
+      const res = await fetch("/api/machine/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -51,22 +51,19 @@ export default function ClaimPage() {
     }
   };
 
-  // 👇 USE EFFECT COMES AFTER
   useEffect(() => {
     if (status === "loading") return;
 
-    // A. If not logged in, show UI
     if (status === "unauthenticated") {
       setClaimState("verifying");
       return;
     }
 
-    // B. If logged in, Auto-Claim immediately
     if (status === "authenticated" && !hasClaimed.current) {
       handleClaim();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]); // We ignore handleClaim dependency to prevent infinite loops without useCallback
+  }, [status]); 
 
   // --- RENDERING ---
 
@@ -118,12 +115,15 @@ export default function ClaimPage() {
               <span className="text-sm font-bold tracking-widest text-gray-400 uppercase">Points Added</span>
             </div>
             <p className="font-medium text-gray-600">{message}</p>
-            <button 
-              onClick={() => router.push("/")}
-              className="w-full py-4 font-bold text-white bg-gray-900 rounded-xl hover:bg-black"
+            
+            {/* 👇 FIX: Use Link instead of router.push for instant speed */}
+            <Link 
+              href="/"
+              replace
+              className="block w-full py-4 font-bold text-white bg-gray-900 rounded-xl hover:bg-black"
             >
               Go to Dashboard
-            </button>
+            </Link>
           </div>
         )}
 
@@ -135,12 +135,13 @@ export default function ClaimPage() {
             </div>
             <h1 className="text-2xl font-bold text-gray-800">Claim Failed</h1>
             <p className="text-red-500">{message}</p>
-            <button 
-              onClick={() => router.push("/")}
-              className="w-full py-4 font-bold text-gray-800 bg-gray-200 rounded-xl hover:bg-gray-300"
+            
+            <Link 
+              href="/"
+              className="block w-full py-4 font-bold text-gray-800 bg-gray-200 rounded-xl hover:bg-gray-300"
             >
               Back to Home
-            </button>
+            </Link>
           </div>
         )}
 

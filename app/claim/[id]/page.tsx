@@ -26,7 +26,7 @@ export default function ClaimPage() {
     try {
       const secret = searchParams.get("secret");
 
-      const res = await fetch("/api/machine/claim", {
+      const res = await fetch("/api/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

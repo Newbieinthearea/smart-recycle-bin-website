@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ScanLine, Plus, Package, Users, Ticket, Pencil, Trash2, X, Activity, Battery, Signal, AlertTriangle } from "lucide-react";
+import { ScanLine, Plus, Package, Users, Ticket, Pencil, Trash2, X, Activity, Battery, Signal, AlertTriangle, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -57,6 +57,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"redemptions" | "rewards" | "bins">("bins");
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Editing State
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -76,17 +78,33 @@ export default function AdminDashboard() {
     if (status === "authenticated") fetchData();
   }, [status, session, router]);
 
-  const fetchData = async () => {
+  // Auto-refresh bin data every 10 seconds
+  useEffect(() => {
+    if (status !== "authenticated" || session?.user?.role !== "ADMIN") return;
+    
+    const interval = setInterval(() => {
+      fetchData(true); // Silent refresh
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [status, session]);
+
+  const fetchData = async (silent = false) => {
+    if (!silent) setLoading(true);
+    setIsRefreshing(true);
+    
     try {
       const res = await fetch("/api/admin/data");
       if (res.ok) {
         const json: DashboardData = await res.json();
         setData(json);
+        setLastUpdated(new Date());
       }
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -134,6 +152,18 @@ export default function AdminDashboard() {
     setFormData({ name: "", description: "", cost: 0, stock: 0, image: "" });
   };
 
+  // Helper to format time ago
+  const getTimeAgo = (date: Date | null) => {
+    if (!date) return "Never";
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+    if (seconds < 10) return "Just now";
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
+
   // Helper to check if bin is "dead" (offline for > 2 mins)
   const isBinOffline = (lastActive: string) => {
     const diff = new Date().getTime() - new Date(lastActive).getTime();
@@ -152,14 +182,30 @@ export default function AdminDashboard() {
         <div className="flex flex-col gap-4 mb-8 md:flex-row md:justify-between md:items-center">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
-            <p className="text-slate-500 dark:text-slate-400">Manage machines, rewards and redemptions</p>
+            <div className="flex items-center gap-3">
+              <p className="text-slate-500 dark:text-slate-400">Manage machines, rewards and redemptions</p>
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <span className={`w-2 h-2 rounded-full ${isRefreshing ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span>
+                <span>Updated {getTimeAgo(lastUpdated)}</span>
+              </div>
+            </div>
           </div>
-          <Link 
-            href="/admin/scan" 
-            className="flex items-center gap-2 px-6 py-3 font-bold text-white transition bg-blue-600 shadow-lg hover:bg-blue-700 rounded-xl"
-          >
-            <ScanLine className="w-5 h-5" /> Open Scanner
-          </Link>
+          <div className="flex gap-3">
+            <button
+              onClick={() => fetchData()}
+              className="flex items-center gap-2 px-4 py-3 font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition"
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+            <Link 
+              href="/admin/scan" 
+              className="flex items-center gap-2 px-6 py-3 font-bold text-white transition bg-blue-600 shadow-lg hover:bg-blue-700 rounded-xl"
+            >
+              <ScanLine className="w-5 h-5" /> Open Scanner
+            </Link>
+          </div>
         </div>
 
         {/* STATS */}

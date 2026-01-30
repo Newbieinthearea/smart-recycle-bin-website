@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { ScanLine, Plus, Package, Users, Ticket, Pencil, Trash2, X, Activity, Battery, Signal, AlertTriangle, RefreshCw } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 
 // --- Interfaces ---
@@ -214,12 +213,12 @@ export default function AdminDashboard() {
               <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
               Refresh
             </button>
-            <Link 
-              href="/admin/scan" 
+            <button 
+              onClick={() => router.push("/admin/scan")}
               className="flex items-center gap-2 px-6 py-3 font-bold text-white transition bg-blue-600 shadow-lg hover:bg-blue-700 rounded-xl"
             >
               <ScanLine className="w-5 h-5" /> Open Scanner
-            </Link>
+            </button>
           </div>
         </div>
 

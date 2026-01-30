@@ -99,3 +99,18 @@ model Redemption {
   
   createdAt DateTime @default(now())
 }
+
+model Bin {
+  id          String   @id // Manual ID like "BIN_01"
+  name        String   // Friendly name e.g. "Cafeteria Bin"
+  location    String?
+  
+  // Status Data
+  isOnline    Boolean  @default(false)
+  fillLevel   Int      @default(0)      // 0-100%
+  status      String   @default("IDLE") // IDLE, RUNNING, FULL, MAINTENANCE
+  lastActive  DateTime @default(now())  // To detect offline status
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

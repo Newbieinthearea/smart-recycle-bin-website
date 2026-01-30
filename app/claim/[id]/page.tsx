@@ -4,7 +4,7 @@ import { useSession, signIn } from "next-auth/react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Loader2, CheckCircle, XCircle, Gift, Trophy } from "lucide-react";
-
+import Link from "next/link";
 export default function ClaimPage() {
   const { data: session, status } = useSession();
   const router = useRouter();

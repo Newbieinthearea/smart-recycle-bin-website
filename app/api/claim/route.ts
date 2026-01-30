@@ -48,9 +48,7 @@ export async function POST(req: Request) {
     })
   ]);
 
-  // 7. ⚡ FIX THE DASHBOARD LAG ⚡
-  // This purges the cache for the home page so the new points show up instantly.
-  revalidatePath("/");
+  // Note: Removed revalidatePath to prevent delay. Client will refresh on navigation.
 
   return NextResponse.json({ success: true, points: pointsEarned });
 }

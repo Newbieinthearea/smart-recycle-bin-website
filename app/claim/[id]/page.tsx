@@ -3,11 +3,11 @@
 import { useSession, signIn } from "next-auth/react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 import { Loader2, CheckCircle, XCircle, Gift, Trophy } from "lucide-react";
 
 export default function ClaimPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const params = useParams(); 
   const searchParams = useSearchParams(); 
   
@@ -119,13 +119,12 @@ export default function ClaimPage() {
 
             <p className="font-medium text-gray-600">{message}</p>
             
-            <Link 
-              href="/"
-              replace
-              className="block w-full py-4 font-bold text-white bg-gray-900 rounded-xl hover:bg-black shadow-lg shadow-gray-300"
+            <button
+              onClick={() => router.push("/")}
+              className="w-full py-4 font-bold text-white bg-gray-900 rounded-xl hover:bg-black shadow-lg shadow-gray-300 transition-colors"
             >
               Go to Dashboard
-            </Link>
+            </button>
           </div>
         )}
 

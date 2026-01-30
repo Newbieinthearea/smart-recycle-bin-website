@@ -83,7 +83,7 @@ export default function AdminDashboard() {
     if (status !== "authenticated" || session?.user?.role !== "ADMIN") return;
     
     const interval = setInterval(() => {
-      fetchData(true); // Silent refresh
+      fetchBinData(); // Only refresh bin status
     }, 10000); // 10 seconds
 
     return () => clearInterval(interval);
@@ -105,6 +105,21 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
       setIsRefreshing(false);
+    }
+  };
+
+  // Fetch only bin status (for auto-refresh)
+  const fetchBinData = async () => {
+    try {
+      const res = await fetch("/api/admin/bins");
+      if (res.ok) {
+        const json = await res.json();
+        // Update only the bins in the state, keep redemptions and rewards unchanged
+        setData(prevData => prevData ? { ...prevData, bins: json.bins } : null);
+        setLastUpdated(new Date());
+      }
+    } catch (error) {
+      console.error("Error fetching bin data:", error);
     }
   };
 

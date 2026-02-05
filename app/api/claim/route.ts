@@ -27,9 +27,10 @@ export async function POST(req: Request) {
      return NextResponse.json({ error: "Invalid QR Code" }, { status: 403 });
   }
 
-  // 5. Calculate Points
+  // 5. Calculate Points & Items
   // Logic: Plastic = 10 pts, Cans = 15 pts
   const pointsEarned = (tx.plastic * 10) + (tx.cans * 15);
+  const totalItems = tx.plastic + tx.cans;
 
   // 6. Update Database (Atomic Transaction)
   await prisma.$transaction([
@@ -41,10 +42,13 @@ export async function POST(req: Request) {
         userId: session.user.id // Connect to the user
       }
     }),
-    // B. Add points to User Wallet
+    // B. Add points & recycled count to User
     prisma.user.update({
       where: { email: session.user.email },
-      data: { points: { increment: pointsEarned } }
+      data: { 
+        points: { increment: pointsEarned },
+        recycledCount: { increment: totalItems }
+      }
     })
   ]);
 

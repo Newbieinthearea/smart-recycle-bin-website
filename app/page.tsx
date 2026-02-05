@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "./api/auth/[...nextauth]/route"; 
-import { Leaf, Recycle, Trophy } from "lucide-react";
+import { Leaf, Recycle, Trophy, Zap } from "lucide-react";
 import UserMenu from "./components/UserMenu";
 import RewardSystem from "./components/RewardSystem";
 import Leaderboard from "./components/Leaderboard"; 
@@ -21,6 +21,9 @@ export default async function Home() {
         redemptions: {
             include: { reward: true },
             orderBy: { createdAt: 'desc' }
+        },
+        transactions: {
+            where: { isClaimed: true }
         }
     }
   });
@@ -47,9 +50,28 @@ export default async function Home() {
     select: { id: true, name: true, points: true, recycledCount: true, image: true }
   });
 
+  // 5. Calculate Energy & Environmental Impact
+  // Sum up actual plastic bottles and aluminum cans from claimed transactions
+  const totalPlastic = user.transactions.reduce((sum, tx) => sum + tx.plastic, 0);
+  const totalCans = user.transactions.reduce((sum, tx) => sum + tx.cans, 0);
+  
+  // Energy savings based on LCA (Life Cycle Assessment) data:
+  // - Plastic (PET): 0.042 kWh saved per bottle (Source: EPA WARM Model, Franklin Associates)
+  // - Aluminum: 0.21 kWh saved per can (Source: Aluminum Association, U.S. DOE)
+  const energySavedKwh = (totalPlastic * 0.042) + (totalCans * 0.21);
+  
+  // CO₂ savings (approximate):
+  // - Plastic: ~40g CO₂ per bottle
+  // - Aluminum: ~130g CO₂ per can
+  const co2SavedKg = (totalPlastic * 0.04) + (totalCans * 0.13);
+
   const stats = {
     points: user.points ?? 0,
     recycled: user.recycledCount ?? 0,
+    plastic: totalPlastic,
+    cans: totalCans,
+    energySaved: energySavedKwh,
+    co2Saved: co2SavedKg,
   };
 
   return (
@@ -77,7 +99,7 @@ export default async function Home() {
         </div>
 
         {/* STATS GRID (Uses gap-4) */}
-        <div className="grid grid-cols-1 gap-4 mb-8 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex items-center gap-4 p-6 bg-white border shadow-sm dark:bg-slate-800 rounded-2xl border-green-100 dark:border-slate-700">
             <div className="p-3 bg-green-100 rounded-xl dark:bg-green-900/30">
               <Trophy className="w-8 h-8 text-green-600 dark:text-green-400" />
@@ -97,12 +119,21 @@ export default async function Home() {
             </div>
           </div>
           <div className="flex items-center gap-4 p-6 bg-white border shadow-sm dark:bg-slate-800 rounded-2xl border-green-100 dark:border-slate-700">
+            <div className="p-3 bg-yellow-100 rounded-xl dark:bg-yellow-900/30">
+              <Zap className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Energy Saved</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white">{stats.energySaved.toFixed(2)} kWh</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-6 bg-white border shadow-sm dark:bg-slate-800 rounded-2xl border-green-100 dark:border-slate-700">
             <div className="p-3 bg-orange-100 rounded-xl dark:bg-orange-900/30">
               <Leaf className="w-8 h-8 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">CO₂ Saved</p>
-              <p className="text-2xl font-bold text-zinc-900 dark:text-white">{(stats.recycled * 0.15).toFixed(1)}kg</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white">{stats.co2Saved.toFixed(2)} kg</p>
             </div>
           </div>
         </div>
